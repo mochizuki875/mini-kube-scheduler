@@ -11,12 +11,13 @@ func addAllEventHandlers(
 	informerFactory informers.SharedInformerFactory,
 ) {
 	// unscheduled pod
+	// Pod InformerにEventHandlerを追加
 	informerFactory.Core().V1().Pods().Informer().AddEventHandler(
-		cache.FilteringResourceEventHandler{
+		cache.FilteringResourceEventHandler{ // Event発火時にFilterを行うタイプのEventHandler
 			FilterFunc: func(obj interface{}) bool {
 				switch t := obj.(type) {
 				case *v1.Pod:
-					return !assignedPod(t)
+					return !assignedPod(t) // nodeNameがなければTrue
 				default:
 					return false
 				}

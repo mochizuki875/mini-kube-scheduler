@@ -50,7 +50,10 @@ func (s *Service) StartScheduler(versionedcfg *v1beta2config.KubeSchedulerConfig
 	clientSet := s.clientset
 	ctx, cancel := context.WithCancel(context.Background())
 
-	informerFactory := scheduler.NewInformerFactory(clientSet, 0)
+	// InformerFactoryを作成
+	// SharedInformerFactoryを生成
+	// ※SharedInformerFactory自体はclient-go/informersで定義されてる
+	informerFactory := scheduler.NewInformerFactory(clientSet, 0) 
 	evtBroadcaster := events.NewBroadcaster(&events.EventSinkImpl{
 		Interface: clientSet.EventsV1(),
 	})
@@ -59,17 +62,18 @@ func (s *Service) StartScheduler(versionedcfg *v1beta2config.KubeSchedulerConfig
 
 	s.currentSchedulerCfg = versionedcfg.DeepCopy()
 
+	// Queueの作成とEventHandlerの定義を行う
 	sched := minisched.New(
 		clientSet,
 		informerFactory,
 	)
 
-	informerFactory.Start(ctx.Done())
+	informerFactory.Start(ctx.Done()) // Informerを起動
 	informerFactory.WaitForCacheSync(ctx.Done())
 
 	go sched.Run(ctx)
 
-	s.shutdownfn = cancel
+	s.shutdownfn = cancel // schedulerを停止するためのcontextのcancel関数を設定
 
 	return nil
 }

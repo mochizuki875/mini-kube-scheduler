@@ -17,11 +17,11 @@ func New(
 	informerFactory informers.SharedInformerFactory,
 ) *Scheduler {
 	sched := &Scheduler{
-		SchedulingQueue: queue.New(),
+		SchedulingQueue: queue.New(), // Queueの生成
 		client:          client,
 	}
 
-	addAllEventHandlers(sched, informerFactory)
+	addAllEventHandlers(sched, informerFactory) // EventHandlerの登録
 
 	return sched
 }

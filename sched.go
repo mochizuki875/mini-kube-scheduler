@@ -28,18 +28,20 @@ func main() {
 
 // start starts scheduler and needed k8s components.
 func start() error {
-	cfg, err := config.NewConfig()
+	cfg, err := config.NewConfig() // 環境変数を取得(make start時に実行されるshで設定されたもの)
 	if err != nil {
 		return xerrors.Errorf("get config: %w", err)
 	}
 
+	// kube-apiserverを起動
+	// etcdはmake start実行時に起動されているためそのURLを渡している
 	restclientCfg, apiShutdown, err := k8sapiserver.StartAPIServer(cfg.EtcdURL)
 	if err != nil {
 		return xerrors.Errorf("start API server: %w", err)
 	}
 	defer apiShutdown()
 
-	client := clientset.NewForConfigOrDie(restclientCfg)
+	client := clientset.NewForConfigOrDie(restclientCfg) // clientsetを生成
 
 	pvshutdown, err := pvcontroller.StartPersistentVolumeController(client)
 	if err != nil {
@@ -47,19 +49,20 @@ func start() error {
 	}
 	defer pvshutdown()
 
-	sched := scheduler.NewSchedulerService(client, restclientCfg)
+	sched := scheduler.NewSchedulerService(client, restclientCfg) // schedulerのServiceインスタンスを生成
 
-	sc, err := defaultconfig.DefaultSchedulerConfig()
+	sc, err := defaultconfig.DefaultSchedulerConfig() // KubeSchedulerConfigurationを生成
 	if err != nil {
 		return xerrors.Errorf("create scheduler config")
 	}
 
-	if err := sched.StartScheduler(sc); err != nil {
+	// schedulerやInformerを作成し起動する(EventHandlerの登録もここ)
+	if err := sched.StartScheduler(sc); err != nil { 
 		return xerrors.Errorf("start scheduler: %w", err)
 	}
-	defer sched.ShutdownScheduler()
+	defer sched.ShutdownScheduler() // cおんてxtのcancel関数を実行してschedulerを停止
 
-	err = scenario(client)
+	err = scenario(client) // シナリオ実行
 	if err != nil {
 		return xerrors.Errorf("start scenario: %w", err)
 	}
@@ -67,6 +70,7 @@ func start() error {
 	return nil
 }
 
+// スケジューラーの動作確認を行うシミュレーションシナリオ
 func scenario(client clientset.Interface) error {
 	ctx := context.Background()
 
@@ -81,6 +85,7 @@ func scenario(client clientset.Interface) error {
 		if err != nil {
 			return fmt.Errorf("create node: %w", err)
 		}
+		klog.Info("scenario: node" + suffix + " created")
 	}
 
 	klog.Info("scenario: all nodes created")
