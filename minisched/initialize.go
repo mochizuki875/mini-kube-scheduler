@@ -33,17 +33,17 @@ func New(
 		client:          client,
 	}
 
-	filterP, err := createFilterPlugins()
+	filterP, err := createFilterPlugins() // Filter Pluginを[]framework.FilterPluginで取得
 	if err != nil {
 		return nil, fmt.Errorf("create filter plugins: %w", err)
 	}
-	sched.filterPlugins = filterP
+	sched.filterPlugins = filterP // ★schedulerのメンバーであるfilterPluginsに各種Filter Pluginを追加
 
-	scoreP, err := createScorePlugins()
+	scoreP, err := createScorePlugins() // Score Pluginを[]framework.ScorePluginで取得
 	if err != nil {
 		return nil, fmt.Errorf("create score plugins: %w", err)
 	}
-	sched.scorePlugins = scoreP
+	sched.scorePlugins = scoreP // ★schedulerのメンバーであるscorePluginsに各種Score Pluginを追加
 
 	addAllEventHandlers(sched, informerFactory)
 
@@ -66,15 +66,16 @@ func createFilterPlugins() ([]framework.FilterPlugin, error) {
 }
 
 func createScorePlugins() ([]framework.ScorePlugin, error) {
-	// nodenumber is FilterPlugin.
-	nodenumberplugin, err := createNodeNumberPlugin()
+	// nodenumber is FilterPlugin. → 多分間違い
+	// nodenumber is ScorePlugin.
+	nodenumberplugin, err := createNodeNumberPlugin() // NodeNumber Pluginを作成
 	if err != nil {
 		return nil, fmt.Errorf("create nodenumber plugin: %w", err)
 	}
 
 	// We use nodenumber plugin only.
-	scorePlugins := []framework.ScorePlugin{
-		nodenumberplugin.(framework.ScorePlugin),
+	scorePlugins := []framework.ScorePlugin{ // NodeNumber PluginをscorePluginsに追加
+		nodenumberplugin.(framework.ScorePlugin), // アサーションでPlugin→ScorePlugin
 	}
 
 	return scorePlugins, nil
@@ -108,7 +109,7 @@ func createNodeNumberPlugin() (framework.Plugin, error) {
 		return nodenumberplugin, nil
 	}
 
-	p, err := nodenumber.New(nil, nil)
+	p, err := nodenumber.New(nil, nil) // ここでnodenumberというScore Pluginのインスタンスを作成
 	nodenumberplugin = p
 
 	return p, err

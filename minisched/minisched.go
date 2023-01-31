@@ -58,7 +58,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	klog.Info("minischeduler: ran score plugins successfully")
 	klog.Info("minischeduler: score results", score)
 
-	hostname, err := sched.selectHost(score)
+	hostname, err := sched.selectHost(score) // Nodeに付与されたScoreからNodeを選択
 	if err != nil {
 		klog.Error(err)
 		return
@@ -73,34 +73,34 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 }
 
 func (sched *Scheduler) RunFilterPlugins(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodes []v1.Node) ([]*v1.Node, error) {
-	feasibleNodes := make([]*v1.Node, 0, len(nodes))
+	feasibleNodes := make([]*v1.Node, 0, len(nodes)) // FilterをクリアしたNode
 
-	diagnosis := framework.Diagnosis{
+	diagnosis := framework.Diagnosis{ // Filterに弾かれたNodeとプラグインの記録
 		NodeToStatusMap:      make(framework.NodeToStatusMap),
 		UnschedulablePlugins: sets.NewString(),
 	}
 
 	// TODO: consider about nominated pod
-	for _, n := range nodes {
+	for _, n := range nodes { // Nodeでループ
 		n := n
 		nodeInfo := framework.NewNodeInfo()
 		nodeInfo.SetNode(&n)
 
 		status := framework.NewStatus(framework.Success)
-		for _, pl := range sched.filterPlugins {
-			status = pl.Filter(ctx, state, pod, nodeInfo)
+		for _, pl := range sched.filterPlugins { // Filter Pluginでループ
+			status = pl.Filter(ctx, state, pod, nodeInfo) // Filterを実行
 			if !status.IsSuccess() {
 				status.SetFailedPlugin(pl.Name())
 				diagnosis.UnschedulablePlugins.Insert(status.FailedPlugin())
 				break
 			}
 		}
-		if status.IsSuccess() {
+		if status.IsSuccess() { // 全てのFilterを通過したらfeasibleNodesに追加
 			feasibleNodes = append(feasibleNodes, nodeInfo.Node())
 		}
 	}
 
-	if len(feasibleNodes) == 0 {
+	if len(feasibleNodes) == 0 { // Filterを追加したNodeが存在しない場合
 		return nil, &framework.FitError{
 			Pod:       pod,
 			Diagnosis: diagnosis,
@@ -110,11 +110,11 @@ func (sched *Scheduler) RunFilterPlugins(ctx context.Context, state *framework.C
 	return feasibleNodes, nil
 }
 func (sched *Scheduler) RunScorePlugins(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodes []*v1.Node) (framework.NodeScoreList, *framework.Status) {
-	scoresMap := sched.createPluginToNodeScores(nodes)
+	scoresMap := sched.createPluginToNodeScores(nodes) // map[string]NodeScoreList
 
-	for index, n := range nodes {
-		for _, pl := range sched.scorePlugins {
-			score, status := pl.Score(ctx, state, pod, n.Name)
+	for index, n := range nodes { // Nodeでループ
+		for _, pl := range sched.scorePlugins { // Score Pluginでループ
+			score, status := pl.Score(ctx, state, pod, n.Name) // Score Pluginを実行
 			if !status.IsSuccess() {
 				return nil, status
 			}
@@ -127,6 +127,7 @@ func (sched *Scheduler) RunScorePlugins(ctx context.Context, state *framework.Cy
 
 	// TODO: plugin weight & normalizeScore
 
+	// 各Nodeに対してScoringの結果を合算してsliceを返す
 	result := make(framework.NodeScoreList, 0, len(nodes))
 	for i := range nodes {
 		result = append(result, framework.NodeScore{Name: nodes[i].Name, Score: 0})
