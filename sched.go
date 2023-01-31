@@ -49,7 +49,7 @@ func start() error {
 	}
 	defer pvshutdown()
 
-	sched := scheduler.NewSchedulerService(client, restclientCfg) // schedulerのServiceインスタンスを生成
+	sched := scheduler.NewSchedulerService(client, restclientCfg) // schedulerのServiceインスタンスを生成(schedulerインスタンスを作ったりするためのもの)
 
 	sc, err := defaultconfig.DefaultSchedulerConfig() // KubeSchedulerConfigurationを生成
 	if err != nil {
