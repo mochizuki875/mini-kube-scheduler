@@ -134,6 +134,7 @@ func scenario(client clientset.Interface) error {
 	if pod9.Spec.NodeName != "" {
 		klog.Fatal("scenario: pod9 should not be bound yet")
 	}
+	klog.Info("scenario: pod9 is bound to " + pod9.Spec.NodeName)
 	klog.Info("scenario: pod9 has not be bound yet")
 
 	// wait pod9
