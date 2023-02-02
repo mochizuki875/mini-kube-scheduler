@@ -51,7 +51,7 @@ func (sched *Scheduler) scheduleOne(ctx context.Context) {
 	klog.Info("minischeduler: fasible nodes: ", feasibleNodes)
 
 	// pre score
-	status := sched.RunPreScorePlugins(ctx, state, pod, feasibleNodes)
+	status := sched.RunPreScorePlugins(ctx, state, pod, feasibleNodes) // 登録されたPreScore Pluginを実行
 	if !status.IsSuccess() {
 		klog.Error(status.AsError())
 		return
@@ -121,7 +121,7 @@ func (sched *Scheduler) RunFilterPlugins(ctx context.Context, state *framework.C
 }
 func (sched *Scheduler) RunPreScorePlugins(ctx context.Context, state *framework.CycleState, pod *v1.Pod, nodes []*v1.Node) *framework.Status {
 	for _, pl := range sched.preScorePlugins {
-		status := pl.PreScore(ctx, state, pod, nodes)
+		status := pl.PreScore(ctx, state, pod, nodes) // 実行結果をstatusに入れて返す
 		if !status.IsSuccess() {
 			return status
 		}
